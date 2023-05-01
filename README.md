@@ -7,7 +7,7 @@
 
 <div align="center">
 <p>Relatório gerado através do Tableau</p>
-<img src="https://github.com/Lucas-Sobreira/Recomendacoes_Imobiliarias/blob/main/Relatorio.png"/>
+<img src="https://github.com/Lucas-Sobreira/Recomendacoes_Imobiliarias/blob/main/arquivos/imagens/Relatorio.png"/>
 </div>
 
 <div>
@@ -19,12 +19,12 @@
 <p></p>
 
 <p>Arquitetura do Projeto Atualmente</p>
-<img src="https://github.com/Lucas-Sobreira/Recomendacoes_Imobiliarias/blob/main/Arquitetura_atual.png"/>
+<img src="https://github.com/Lucas-Sobreira/Recomendacoes_Imobiliarias/blob/main/arquivos/imagens/Arquitetura_atual.png"/>
 
 <p></p>
 
 <p>Arquitetura do Projeto Concluído</p>
-<img src="https://github.com/Lucas-Sobreira/Recomendacoes_Imobiliarias/blob/main/Arquitetura_Projeto.png"/>
+<img src="https://github.com/Lucas-Sobreira/Recomendacoes_Imobiliarias/blob/main/arquivos/imagens/Arquitetura_Projeto.png"/>
 
 </div>
 

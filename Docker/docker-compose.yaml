@@ -1,0 +1,92 @@
+version: '3.7'
+
+networks:
+  net:
+    driver: bridge
+
+services:
+    postgres:
+        image: postgres:9.6
+        hostname: postgres
+        container_name: postgres
+        environment:
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+            - PGDATA=/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "airflow"]
+            interval: 5s
+            retries: 5
+        networks:
+            - net
+        volumes:
+            - ./database:/var/lib/postgresql/data
+
+    airflow:
+        image: ferrettivinicius/airflow-aula-fia:latest
+        hostname: airflow
+        container_name: airflow
+        depends_on:
+            postgres:
+                condition: service_healthy
+        volumes:
+            - ./dags:/usr/local/airflow/dags
+            - ./jars:/usr/local/airflow/jars
+            - ./config:/usr/local/airflow/config
+            - ./plugins:/usr/local/airflow/plugins
+            - ./webscraping_data:/usr/local/airflow/data
+        networks:
+            - net
+        ports:
+            - 8080:8080
+
+    minio:
+        image: minio/minio:latest
+        hostname: minio
+        container_name: minio
+        environment:
+          - MINIO_ROOT_USER=aulafia 
+          - MINIO_ROOT_PASSWORD=aulafia@123
+        volumes:
+          - ./minio:/data
+        networks:
+          - net
+        ports:
+          - 9000:9000
+          - 9001:9001
+        command: server /data --console-address ":9001"
+
+    jupyter:
+        image: jupyter/pyspark-notebook:spark-3.2.1
+        hostname: jupyter
+        container_name: jupyter
+        ports:
+          - 8888:8888
+        networks:
+          - net
+        volumes:
+          - ./jupyter/notebooks:/home/jovyan/notebooks
+          - ./jupyter/jars:/home/jovyan/jars
+          - ./jupyter/data:/home/jovyan/data
+
+    dremio:
+        image: dremio/dremio-oss:20.1
+        container_name: dremio
+        ports:  
+          - 9047:9047 
+          - 31010:31010 
+          - 45678:45678
+        networks:
+          - net
+        volumes:
+          - dremio:/opt/dremio/data
+        deploy:
+          restart_policy:
+            condition: on-failure
+            delay: 5s
+            max_attempts: 3
+            window: 120s
+
+volumes: 
+    dremio:

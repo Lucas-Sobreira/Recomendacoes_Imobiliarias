@@ -23,7 +23,7 @@ O funcionário poderá guiar o cliente, de acordo com os gostos e preferências,
 ## Arquitetura da Solução e Detalhamento
 
 <div align="center">
-<img src="https://github.com/Lucas-Sobreira/Recomendacoes_Imobiliarias/blob/main/imgs/arquitetura.png" width="650" height="350"/>
+<img src="https://github.com/Lucas-Sobreira/Recomendacoes_Imobiliarias/blob/main/imgs/arquitetura.png" width="620" height="400"/>
 </div>
 
 <br>
@@ -43,5 +43,11 @@ O funcionário poderá guiar o cliente, de acordo com os gostos e preferências,
 ### <ins>Relatório Final</ins>
 
 <div align="center">
-<img src="https://github.com/Lucas-Sobreira/Recomendacoes_Imobiliarias/blob/main/imgs/relatorio.png" width="900" height="450"/>
+<img src="https://github.com/Lucas-Sobreira/Recomendacoes_Imobiliarias/blob/main/imgs/relatorio.png" width="900" height="400"/>
+</div>
+
+<br>
+
+<div align="center">
+<img src="https://github.com/Lucas-Sobreira/Recomendacoes_Imobiliarias/blob/main/imgs/relatorio2.png" width="900" height="400"/>
 </div>

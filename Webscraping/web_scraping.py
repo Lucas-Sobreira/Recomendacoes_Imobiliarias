@@ -63,8 +63,8 @@ def webscraping(today, path):
     site = page_driver(driver, url_page1)
 
     # Quantidade de Páginas que tem no site
-    total_pages = site.find('a', class_='MuiTypography-root MuiLink-root jss332 MuiLink-underlineNone jss333 jss348 jss335 jss350 jss325 MuiTypography-colorPrimary').text
-
+    total_pages = site.find('a', class_='MuiTypography-root MuiLink-root jss346 MuiLink-underlineNone jss347 jss362 jss349 jss364 jss339 MuiTypography-colorPrimary').text
+    
     # Salvando o DataFrame no CSV
     with open(path + 'webscraping{}.csv'.format(today), 'a', encoding= 'utf-8', newline='') as csvfile:
         
@@ -73,7 +73,8 @@ def webscraping(today, path):
         writer.writerow(['Link_Apto', 'Endereco', 'Bairro', 'Valor', 'Informacoes'])    
 
         # Varrendo todas as páginas do Site  
-        for n_page in range(1, int(total_pages)+1):      
+        # for n_page in range(1, int(total_pages)+1):      
+        for n_page in range(130, int(total_pages)+1):
             print('Página {} de {}'.format(n_page, total_pages))
         
             # HTML p/ página 
@@ -81,7 +82,7 @@ def webscraping(today, path):
             page = page_driver(driver, url_page)
             
             # Pegando todos os links da página atual 
-            links = page.find_all('a', class_='MuiButtonBase-root MuiCardActionArea-root jss261')
+            links = page.find_all('a', class_='MuiButtonBase-root MuiCardActionArea-root jss263')
             if links == []: 
                 print('Não foi possível encontrar o link do imóvel\nProvavelmente a "class_" foi alterada\n')
 
@@ -94,7 +95,7 @@ def webscraping(today, path):
                 try:                
                     apto_link = link['href']
                     infos.append(default_link + apto_link)
-                    # print('Link do apto atual: {}'.format(default_link + apto_link))
+                    print('Link do apto atual: {}'.format(default_link + apto_link))
                 except Exception as e:
                     print('Mensagem de erro: {}'.format(e))
 
@@ -102,6 +103,7 @@ def webscraping(today, path):
                     # Entrando em cada página dos aptos existentes na página atual  
                     pagina_apto = page_driver(driver, url= default_link + apto_link) 
                     
+                    # Endereço
                     try:                                          
                         endereco = pagina_apto.find('div', class_='MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-md-9').text.replace('•', ',').replace('  ', ' ').replace(' ,', ',').split(',')
                         infos.append(endereco)
@@ -117,21 +119,27 @@ def webscraping(today, path):
                         print('Erro na coleta do bairro\nlink:{}\nMensagem de erro: {}'.format((default_link + apto_link), e))
 
                     # Valor do Imóvel
-                    try:
-                        valor = pagina_apto.find('p', class_='MuiTypography-root jss196 jss173 jss181 MuiTypography-body1').text
+                    classes_interesse = ['c-gPjxah c-gPjxah-cmVlgk-align-left c-gPjxah-iPJLV-css Copan_Typography c-PJLV c-PJLV-cUuldJ-textStyle-h3 c-PJLV-bxuTfx-cv',
+                                         'MuiTypography-root jss200 jss177 jss185 MuiTypography-body1',
+                                         'MuiTypography-root jss189 jss166 jss174 MuiTypography-body1'
+                                         ]
+                    
+                    # Função para encontrar o valor com base nas classes de interesse
+                    def encontrar_valor(pagina_apto, classes_interesse):
+                        for classe in classes_interesse:
+                            valor = pagina_apto.find('p', class_=classe)
+                            if valor:
+                                return valor.text
+                        return None
+                    
+                    # Tentativa de encontrar o valor
+                    valor = encontrar_valor(pagina_apto, classes_interesse)
+
+                    if valor:
                         infos.append(valor)
-                    except:
-                        try: 
-                            valor = pagina_apto.find('p', class_='MuiTypography-root jss200 jss177 jss185 MuiTypography-body1').text
-                            infos.append(valor)
-                        except: 
-                            try: 
-                                valor = pagina_apto.find('p', class_='MuiTypography-root jss189 jss166 jss174 MuiTypography-body1').text
-                                infos.append(valor)
-                            except Exception as e:
-                                print('Erro na coleta do bairro\nlink:{}\nMensagem de erro: {}'.format((default_link + apto_link), e))
-                                # infos.append("Erro na coleta")
-                                pass
+                    else:
+                        print('Erro na coleta do valor\nlink:{}\nMensagem de erro: Nenhuma classe de interesse encontrada'.format((default_link + apto_link)))
+                        # infos.append("Erro na coleta")
 
                     # Pegando todas as Infos do Imóvel
                     grid_features = pagina_apto.find('div', class_='MuiGrid-root MuiGrid-container')
@@ -151,15 +159,10 @@ def webscraping(today, path):
 
     driver.quit()
 
-# def input_date(today, path):
-#     df = pd.read_csv(path + 'landing/webscraping{}.csv'.format(today))
-#     df.insert(0, 'Refdate', today.replace('-', '/'))
-#     df.to_csv(path + 'landing/webscraping{}.csv'.format(today), index=False, encoding= 'utf-8')
-
 def input_date(today, path):
     df = pd.read_csv(path + 'webscraping{}.csv'.format(today))
-    df = df.query("Link_Apto != 'Link_Apto'")
-    df.insert(0, 'Refdate', today.replace('-', '/'))
+    df = df.query("Link_Apto != 'Link_Apto'") # Caso seja necessário rodar mais de uma vez o mesmo código, ele limpa o cabeçalho a onde deveria ser o dado. 
+    df.insert(0, 'Refdate', today.replace('-', '/')) # Historização dos dados
     df.to_csv(path + 'webscraping{}.csv'.format(today), index=False, encoding= 'utf-8')
 
 if __name__== "__main__":

@@ -3,6 +3,7 @@ import pyspark.sql.functions as fn
 from pyspark.sql import SparkSession
 import re
 
+# Classe responsavel pela extração de features da coluna Informações
 class regex_transform:
     def __init__(self, _value): 
         self.value = _value
@@ -68,6 +69,8 @@ class regex_transform:
         request = re.findall(floor_regex, self.value)
         if request:
             return request[0]
+        
+        return 'Sem info'
 
     # Tamanho
     def tamanho(self):
@@ -200,21 +203,23 @@ class regex_transform:
         else: 
             return 100000000
 
+# Criando as UFD's
 valor_UDF     = fn.udf(lambda z: regex_transform(z).valor())
 endereco_UDF  = fn.udf(lambda z: regex_transform(z).endereco())
 bairro_UDF    = fn.udf(lambda z: regex_transform(z).bairro())
-andares_UDF   = fn.udf(lambda z: regex_transform(z).andares())
-tamanho_UDF   = fn.udf(lambda z: regex_transform(z).tamanho())
-preco_UDF     = fn.udf(lambda z: regex_transform(z).preco())
-quartos_UDF   = fn.udf(lambda z: regex_transform(z).quartos())
-suite_UDF     = fn.udf(lambda z: regex_transform(z).suite())
-garagem_UDF   = fn.udf(lambda z: regex_transform(z).garagem())
-banheiros_UDF = fn.udf(lambda z: regex_transform(z).banheiros())
-varanda_UDF   = fn.udf(lambda z: regex_transform(z).varanda())
-mobiliado_UDF = fn.udf(lambda z: regex_transform(z).mobiliado())
-portaria_UDF  = fn.udf(lambda z: regex_transform(z).portaria())
-metro_UDF     = fn.udf(lambda z: regex_transform(z).metro())
+andares_UDF   = fn.udf(lambda z: regex_transform(str(z)).andares())
+tamanho_UDF   = fn.udf(lambda z: regex_transform(str(z)).tamanho())
+preco_UDF     = fn.udf(lambda z: regex_transform(str(z)).preco())
+quartos_UDF   = fn.udf(lambda z: regex_transform(str(z)).quartos())
+suite_UDF     = fn.udf(lambda z: regex_transform(str(z)).suite())
+garagem_UDF   = fn.udf(lambda z: regex_transform(str(z)).garagem())
+banheiros_UDF = fn.udf(lambda z: regex_transform(str(z)).banheiros())
+varanda_UDF   = fn.udf(lambda z: regex_transform(str(z)).varanda())
+mobiliado_UDF = fn.udf(lambda z: regex_transform(str(z)).mobiliado())
+portaria_UDF  = fn.udf(lambda z: regex_transform(str(z)).portaria())
+metro_UDF     = fn.udf(lambda z: regex_transform(str(z)).metro())
 
+# Iniciando a Spark Session
 spark = (SparkSession.builder
          .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000")
          .config("spark.hadoop.fs.s3a.access.key", "aulafia")
@@ -225,6 +230,7 @@ spark = (SparkSession.builder
          .getOrCreate()
         )
 
+# Lendo os dados armazenados na camada raw
 df_raw = (spark
       .read
       .format("parquet")
@@ -233,6 +239,7 @@ df_raw = (spark
 
 df_raw.printSchema()
 
+# Fazendo o enriquecimento dos dados utilizando as UDF's criadas
 df_context = (df_raw
               .withColumn('Valor', valor_UDF(fn.col('Valor')))
               .withColumn('Endereco', endereco_UDF(fn.col('Endereco')))
@@ -255,28 +262,37 @@ df_context = (df_context
               .withColumnRenamed("Valor", "Valor_RS")
              )
 
-df_context = (df_context
-              .select('Link_Apto', 'Endereco', 'Bairro', fn.col('Valor_RS').cast('integer'), 'Andares', 
-                      fn.col('Tamanho_m2').cast('integer'), fn.col('Valor_RS/m2').cast('integer'), fn.col('Quartos').cast('integer'), 
-                      fn.col('Suites').cast('integer'), fn.col('Garagem').cast('integer'), fn.col('Banheiros').cast('integer'), 
-                      fn.col('Varanda').cast('integer'), 'Mobiliado', 'Portaria', fn.col('Metro').cast('integer'), 'Refdate'
-                     )
-             )
-
 # Elimando "sujeira" da Raw
 df_context = (df_context.filter(fn.col('Valor_RS').isNotNull()))
 
-# print("Condomínio à venda")
-# (df_context
-#  .filter(fn.col("Endereco")
-#          .like("%à venda%")
-#          )
-# ).show(10, False)
+print('Quantidade de linhas antes do "drop_duplicates": {}'.format(df_context.count()))
+
+df_context = (df_context
+              .na.drop() # Dropando os valores nulos
+              .dropDuplicates(["Link_Apto", "Endereco", "Valor_RS"]) # Dropando apartamentos que mantiveram o valor igual ao longo do tempo  
+              .orderBy("Refdate", ascending=False)    
+              .withColumn("id", fn.monotonically_increasing_id()) # Criando a coluna ID com o autoincremento
+              )
+
+df_context.printSchema()
+
+print('Quantidade de linhas antes do "drop_duplicates": {}'.format(df_context.count()))
+
+print('Quantidade de linhas depois do "drop_duplicates": {}'.format(df_context.count()))
+
+df_context = (df_context
+              .select('id', 'Refdate', 'Link_Apto', 'Endereco', 'Bairro', fn.col('Valor_RS').cast('integer'), 'Andares', 
+                      fn.col('Tamanho_m2').cast('integer'), fn.col('Valor_RS/m2').cast('integer'), fn.col('Quartos').cast('integer'), 
+                      fn.col('Suites').cast('integer'), fn.col('Garagem').cast('integer'), fn.col('Banheiros').cast('integer'), 
+                      fn.col('Varanda').cast('integer'), 'Mobiliado', 'Portaria', fn.col('Metro').cast('integer')
+                     )
+             )
 
 df_context.show(10, False)
 
 df_context.printSchema()
 
+# Armazenando os dados na camada Context
 (df_context
  .write
  .format('parquet')

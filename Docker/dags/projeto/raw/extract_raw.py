@@ -2,6 +2,7 @@ from pyspark.sql.types import *
 import pyspark.sql.functions as fn
 from pyspark.sql import SparkSession
 
+# Iniciando a Spark Session
 spark = (SparkSession.builder
          .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000")
          .config("spark.hadoop.fs.s3a.access.key", "aulafia")
@@ -12,6 +13,7 @@ spark = (SparkSession.builder
          .getOrCreate()
         )
 
+# Lendo os dados da pasta "webscraping_data"
 df = (spark
       .read
       .format("csv")
@@ -21,6 +23,7 @@ df = (spark
 
 df.printSchema()
 
+# Ajustando o formato da data
 df = (df
       .withColumn('Refdate', fn.to_date(fn.col('Refdate'), 'dd/MM/yyyy'))
       )
@@ -32,11 +35,12 @@ df.select('Refdate').distinct().show()
 
 df.show(10, False)
 
+# Salvando os dados na camada Raw
 (df
  .write
  .format('parquet')
  .mode('overwrite')
  .partitionBy('Refdate')
+ .option("compression", "snappy")
  .save('s3a://raw/data')
 )
-

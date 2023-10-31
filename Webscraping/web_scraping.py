@@ -73,8 +73,7 @@ def webscraping(today, path):
         writer.writerow(['Link_Apto', 'Endereco', 'Bairro', 'Valor', 'Informacoes'])    
 
         # Varrendo todas as páginas do Site  
-        # for n_page in range(1, int(total_pages)+1):      
-        for n_page in range(130, int(total_pages)+1):
+        for n_page in range(1, int(total_pages)+1): 
             print('Página {} de {}'.format(n_page, total_pages))
         
             # HTML p/ página 
